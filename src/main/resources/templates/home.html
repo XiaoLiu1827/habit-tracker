@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>ホーム</title>
+</head>
+<body>
+<h1>習慣一覧</h1>
+<ul>
+    <li th:each="habit : ${habits}">
+        <span th:text="${habit.name}"></span>
+        <form th:action="@{'/habit/' + ${habit.id} + '/record'}" method="post">
+            <button type="submit" name="success" value="true">成功</button>
+            <button type="submit" name="success" value="false">失敗</button>
+        </form>
+    </li>
+</ul>
+<a th:href="@{/habit/new}">習慣を追加</a>
+</body>
+</html>
