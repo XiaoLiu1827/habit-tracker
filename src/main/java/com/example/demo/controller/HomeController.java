@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.demo.repository.HabitRepository;
+import com.example.demo.repository.InMemoryHabitRepository;
 
 @Controller
 public class HomeController {
 
 	@Autowired
-	private HabitRepository habitRepository;
+	private InMemoryHabitRepository habitRepository;
 
 	@GetMapping("/")
 	public String home(Model model) {
@@ -30,7 +30,7 @@ public class HomeController {
         // レコードをコンソールに出力
         System.out.println("--------------------------");
         habitRepository.getRecords(id).forEach(record -> {
-            System.out.println(record.getId()+":"+"Habit ID: " + record.getHabitId() + ", Date: " + record.getDate() + ", Success: " + record.isSuccess());
+            System.out.println(record.getId()+":"+"Habit ID: " + record.getHabit() + ", Date: " + record.getDate() + ", Success: " + record.isSuccess());
         });
         
         return "redirect:/";

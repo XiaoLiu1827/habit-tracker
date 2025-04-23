@@ -7,13 +7,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.demo.repository.HabitRepository;
+import com.example.demo.repository.InMemoryHabitRepository;
 
 @Controller
 @RequestMapping("/habit")
 public class HabitController {
 	 @Autowired
-	    private HabitRepository habitRepository;
+	    private InMemoryHabitRepository habitRepository;
 
 	    @GetMapping("/new")
 	    public String newHabitForm() {
