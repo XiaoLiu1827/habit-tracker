@@ -1,15 +1,14 @@
 package com.example.demo.service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.QuestionWithChoicesDto;
-import com.example.demo.model.HabitType;
 import com.example.demo.model.ReviewQuestionMaster;
-import com.example.demo.model.ReviewType;
+import com.example.demo.model.value.QuestionCategoryKey;
 import com.example.demo.repository.ReviewQuestionRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -19,24 +18,23 @@ import lombok.RequiredArgsConstructor;
 public class ReviewQuestionService {
 
 	private final ReviewQuestionRepository questionRepository;
-	
+
 	//習慣タイプと結果区分で分類された質問群を返す
 	public Map<String, List<QuestionWithChoicesDto>> getGroupedQuestions() {
-		Map<String, List<QuestionWithChoicesDto>> result = new HashMap<>();
+		//質問を全件取得
+		List<ReviewQuestionMaster> allQuestions = questionRepository.findAll();
 
-		for (HabitType habitType : HabitType.values()) {
-			for (ReviewType reviewType : ReviewType.values()) {
-				String key = habitType.name().toLowerCase() + "_" + reviewType.name().toLowerCase(); // 例: continue_success
-				List<ReviewQuestionMaster> questions = questionRepository.findByHabitTypeAndReviewType(habitType,
-						reviewType);
-				List<QuestionWithChoicesDto> dtoList = questions.stream()
-						.map(QuestionWithChoicesDto::from)
-						.toList();
+		//habitTypeとReviewTypeでグルーピングする
+		Map<QuestionCategoryKey, List<QuestionWithChoicesDto>> grouped = allQuestions.stream()
+				.collect(Collectors.groupingBy(
+						q -> new QuestionCategoryKey(q.getHabitType(), q.getReviewType()),
+						Collectors.mapping(QuestionWithChoicesDto::from, Collectors.toList())));
 
-				result.put(key, dtoList);
-			}
-		}
+		//キーをStringに変換して、Jsonで扱いやすい形式にする
+		return grouped.entrySet().stream() //Mapのkey-valueペア(1エントリ)をSet(エントリの集合)として取り出す
+				.collect(Collectors.toMap( //加工したエントリから新たなmapを作成
+						entry -> entry.getKey().toKeyString(), // キー：record型 → "CONTINUE_SUCCESS" のような文字列へ変換
+						Map.Entry::getValue));// 値：List<QuestionWithChoicesDto> はそのまま使う
 
-		return result;
 	}
 }
