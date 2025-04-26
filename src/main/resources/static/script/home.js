@@ -30,44 +30,128 @@ startButton.onclick = function() {
 	handleModalFlow();
 }
 
+//**関数 */
+
+//モーダルのイベントフローを管理
+//「ラジオ選択→質問表示→次へ」　のフローを完了まで（全ての習慣で）繰り返す
+//全部終わったら送信する画面へ
 async function handleModalFlow() {
 	modal.style.display = "block";
-	await waitForCloseOrWindowClicked();
+	//閉じるボタン、モーダル外枠クリックいずれかの処理実行を待って、モーダルを閉じる
+	await waitForClickCloseButtonOrOutSide();
 	modal.style.display = "none";
+
+	//ラジオボタン押下を待って質問と選択肢を表示
+	await waitForResult();
+	displayQuestions();
+	document.getElementById("navigationButtons").style.display = "block";
+
+	//次へボタン押下を待って次の習慣へ移動or振り返りの完了
+	await waitForclickNextButton();
+	a();
 
 }
 
-function waitForCloseOrWindowClicked() {
+//閉じるボタンかモーダル外枠のクリックを待機
+function waitForClickCloseButtonOrOutSide() {
 	return new Promise(resolve => {
-		closeButton.addEventListener('click', () => {
+		function handleClose() {
+			// どちらか押されたらresolve
 			resolve();
-		}, { once: true });
+			// イベントリスナーを外しておく（メモリリーク防止）
+			modal.removeEventListener('click', outsideClickListener);
+			closeButton.removeEventListener('click', closeClickListener);
+		}
+
+		function outsideClickListener(event) {
+			//event.target=クリックされたピンポイントの要素
+			//外枠押下時のみ閉じ、モーダルの中を押下時は閉じない
+			if (event.target === modal) {
+				handleClose();
+			}
+		}
+
+		function closeClickListener() {
+			handleClose();
+		}
+
+		//<div id="modal">の外枠＋中の要素全部がイベント対象
+		//※子要素で発生したイベントは親要素に伝わるため
+		modal.addEventListener('click', outsideClickListener);
+		closeButton.addEventListener('click', closeClickListener);
 	});
 }
 
-// モーダルの×ボタンをクリックした時にモーダルを閉じる
-closeButton.onclick = function() {
-	modal.style.display = "none";
-}
+//ラジオボタン押下を待機
+function waitForResult() {
+	return new Promise(resolve => {
+		const radios = document.querySelectorAll('input[name="result"]');
 
-// モーダルの外をクリックした時にモーダルを閉じる
-window.onclick = function(event) {
-	if (event.target == modal) {
-		modal.style.display = "none";
-	}
-}
+		function handler(event) {
+			radios.forEach(radio => {
+				//チェックするごとに毎回イベントリスナーを外す
+				//ラジオボタンを選び直せるよう、once:trueは設定しない
+				radio.removeEventListener('change', handler);
+			});
+			resolve(event.target.value);
+		}
 
-//  成功/失敗選択時に「次へ」ボタンと質問ブロックを表示
-document.querySelectorAll('input[name="result"]').forEach(radio => {
-	radio.addEventListener('change', function() {
-		//document.getElementById("questionBlock").style.display = "block";
-		displayQuestions();
-		document.getElementById("navigationButtons").style.display = "block";
+		radios.forEach(radio => {
+			radio.addEventListener('change', handler);
+		});
 	});
-});
+}
 
-//「次へ」ボタン押下時の処理
-nextButton.addEventListener('click', function() {
+function waitForclickNextButton() {
+	return new Promise(resolve => {
+		function handler() {
+			nextButton.removeEventListener('click', handler);
+			resolve();
+		}
+		nextButton.addEventListener('click', handler);
+	});
+}
+
+//カテゴリに応じた質問を押下されたラジオボタンの下部に表示する
+function displayQuestions() {
+	// habitTypeは "CONTINUE" または "QUIT"
+	const habiType = activeHabits[currentHabitIndex].habitType;
+
+	//カテゴリを取得 isSuccessはラジオボタン押下時に取得する(todo)
+	const categoryKey = getCategoryKey(habiType, isSuccess);
+	renderQuestions(categoryKey);
+}
+
+//どのカテゴリの質問を出すか決定する
+function getCategoryKey(habitType, isSuccess) {
+	// habitTypeは "CONTINUE" または "QUIT"
+	const lowerType = habitType.toLowerCase(); // "continue" or "quit"
+	const result = isSuccess ? "success" : "failure";
+	return `${lowerType}-${result}`; // 例："continue-success"
+}
+
+//質問と選択肢を描画する
+function renderQuestions(categoryKey) {
+	const container = document.getElementById("questionBlock");
+	container.innerHTML = ""; // まずリセット
+
+	const questions = questionMap.get(categoryKey) || [];
+	questions.forEach(q => {
+		const questionDiv = document.createElement('div');
+		const questionText = `<p>${q.text}</p>`;
+		const choiceCheckboxes = q.choices.map(choice => `
+			<label>
+				<input type="checkbox" value="${choice.id}"> ${choice.text}
+			</label><br>
+		`).join("");
+
+		questionDiv.innerHTML = questionText + choiceCheckboxes;
+		container.appendChild(questionDiv);
+	});
+}
+
+//toGPT 関数名提案して！保存する処理だけ担当する
+function a() {
 	//現在の習慣に対する入力を取得
 	const result = document.querySelector('input[name="result"]:checked')?.value;
 	const selectedChoices = Array.from(document.querySelectorAll('#questionBlock input[type="checkbox"]:checked'))
@@ -113,26 +197,8 @@ nextButton.addEventListener('click', function() {
 			currentHabitIndex = 0;
 		});
 	}
-})
-
-//**関数 */
-
-//カテゴリに応じた質問を押下されたラジオボタンの下部に表示する
-function displayQuestions() {
-	// habitTypeは "CONTINUE" または "QUIT"
-	const habiType = activeHabits[currentHabitIndex].habitType;
-
-	//カテゴリを取得
-	const categoryKey = getCategoryKey(habiType);
 }
 
-//どのカテゴリの質問を出すか決定する
-function getCategoryKey(habitType, isSuccess) {
-	// habitTypeは "CONTINUE" または "QUIT"
-	const lowerType = habitType.toLowerCase(); // "continue" or "quit"
-	const result = isSuccess ? "success" : "failure";
-	return `${lowerType}-${result}`; // 例："continue-success"
-}
 
 //質問リストを取得して保持する
 async function fetchQuestions() {
