@@ -27,6 +27,8 @@
 		<div id="myModal" class="modal">
 			<div class="modal-content">
 				<span class="close">&times;</span>
+				<h2 id="modalHabitLabel"></h2>
+				<!-- 結果入力ラジオボタン -->
 				<div class="result-options">
 					<label class="result-option success">
 						<input type="radio" name="result" value="success">
@@ -36,6 +38,16 @@
 						<input type="radio" name="result" value="failure">
 						<span class="option-text">失敗</span>
 					</label>
+				</div>
+				<!-- 質問ブロック -->
+				<div id="questionBlock" class="question-block" style="display: none;">
+					<p>なぜこの結果になったと思いますか？</p>
+					<label><input type="checkbox" value="1"> 気分が良かった</label><br>
+					<label><input type="checkbox" value="2"> 時間に余裕があった</label><br>
+					<label><input type="checkbox" value="3"> 習慣になってきた</label><br>
+				</div>
+				<div id="navigationButtons" style="display: none; margin-top: 20px;">
+					<button id="nextButton">次へ</button>
 				</div>
 			</div>
 			<a th:href="@{/habit/new}">習慣を追加</a>
