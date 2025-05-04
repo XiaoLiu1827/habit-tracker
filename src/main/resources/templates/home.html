@@ -41,18 +41,15 @@
 				</div>
 				<!-- 質問ブロック -->
 				<div id="questionBlock" class="question-block" style="display: none;">
-					<p>なぜこの結果になったと思いますか？</p>
-					<label><input type="checkbox" value="1"> 気分が良かった</label><br>
-					<label><input type="checkbox" value="2"> 時間に余裕があった</label><br>
-					<label><input type="checkbox" value="3"> 習慣になってきた</label><br>
 				</div>
 				<div id="navigationButtons" style="display: none; margin-top: 20px;">
-					<button id="nextButton">次へ</button>
+					<button id="nextHabitButton">次へ</button>
 				</div>
 			</div>
-			<a th:href="@{/habit/new}">習慣を追加</a>
+		</div>
+		<a th:href="@{/habit/new}">習慣を追加</a>
 
-			<script src="../script/home.js"></script>
+		<script src="../script/home.js"></script>
 </body>
 
 </html>

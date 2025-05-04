@@ -1,11 +1,11 @@
 var modal = document.getElementById("myModal");
 const startButton = document.getElementById("startButton");
-var closeButton = document.getElementsByClassName("close")[0];
+const closeButton = document.querySelector(".close");
 let activeHabits = [];
 let currentHabitIndex = 0; // 現在の習慣のインデックス
-const nextButton = document.getElementById("nextButton");
+const nextHabitButton = document.getElementById("nextHabitButton");
 let reviewResults = []; // 各習慣の振り返りデータをここに蓄積
-let questionMap = new Map(); // カテゴリ別に質問リストを格納
+let questionStoreMap = new Map(); // カテゴリ別に質問リストを格納
 
 //**イベント */
 
@@ -17,6 +17,14 @@ window.addEventListener('DOMContentLoaded', function() {
 	fetchQuestions();
 });
 
+
+closeButton.addEventListener("click", () => {
+	const shouldClose = confirm("振り返りを中断しますか？");
+	if (shouldClose) {
+		closeModalAndResetState();
+	}
+});
+
 // スタートボタンをクリックした時にモーダルを表示
 startButton.onclick = function() {
 	if (activeHabits.length === 0) {
@@ -26,132 +34,193 @@ startButton.onclick = function() {
 
 	currentHabitIndex = 0; // 最初の習慣からスタート
 	//習慣名をモーダルに表示する
-	showHabitOnModal(currentHabitIndex);
 	handleModalFlow();
 }
 
 //**関数 */
 
-//モーダルのイベントフローを管理
-//「ラジオ選択→質問表示→次へ」　のフローを完了まで（全ての習慣で）繰り返す
-//全部終わったら送信する画面へ
+//質問リストを取得して保持する
+async function fetchQuestions() {
+	try {
+		const res = await fetch('/api/review/questions');
+
+		const questions = await res.json();
+		console.log('questionsの中身:', questions); // 👈 ここで構造を確認！
+
+		storeQuestionsByCategory(questions);
+	} catch (error) {
+		console.error('質問取得失敗:', error);
+	}
+}
+
+//モーダル上での振り返りフロー全体を管理
+//ユーザの操作（ラジオ選択→質問回答→次へ）を、習慣ごとに繰り返す
+//ユーザ操作及び内部の状態変化を一連の流れとして明示する
+//全習慣の入力が完了したら送信画面へ移行
 async function handleModalFlow() {
 	modal.style.display = "block";
-	//閉じるボタン、モーダル外枠クリックいずれかの処理実行を待って、モーダルを閉じる
-	await waitForClickCloseButtonOrOutSide();
-	modal.style.display = "none";
+	while (currentHabitIndex < activeHabits.length) {
+		resetModalState();
 
-	//ラジオボタン押下を待って質問と選択肢を表示
-	await waitForResult();
-	displayQuestions();
-	document.getElementById("navigationButtons").style.display = "block";
+		showHabitOnModal(currentHabitIndex);
 
-	//次へボタン押下を待って次の習慣へ移動or振り返りの完了
-	await waitForclickNextButton();
-	a();
+		const currentHabitType = activeHabits[currentHabitIndex].type; // CONTINUE or QUIT
 
+		// 成功／失敗のラジオ選択に応じて質問を動的に表示するリスナーを設定
+		setupResultChangeListener(currentHabitType);
+
+		document.getElementById("navigationButtons").style.display = "block";
+
+		// 「次へ」が押されるのを待つ → 入力内容を保存して次の習慣へ
+		await waitForNextButtonClick();
+		recordUserReview();
+		currentHabitIndex++;
+	}
+
+	finishReviewFlow();
 }
 
-//閉じるボタンかモーダル外枠のクリックを待機
-function waitForClickCloseButtonOrOutSide() {
-	return new Promise(resolve => {
-		function handleClose() {
-			// どちらか押されたらresolve
-			resolve();
-			// イベントリスナーを外しておく（メモリリーク防止）
-			modal.removeEventListener('click', outsideClickListener);
-			closeButton.removeEventListener('click', closeClickListener);
-		}
+////閉じるボタンかモーダル外枠のクリックを待機
+//function waitForClickCloseButtonOrOutSide() {
+//	return new Promise(resolve => {
+//		function handleClose() {
+//			// どちらか押されたらresolve
+//			resolve();
+//			// イベントリスナーを外しておく（メモリリーク防止）
+//			modal.removeEventListener('click', outsideClickListener);
+//			closeButton.removeEventListener('click', closeClickListener);
+//		}
+//
+//		function outsideClickListener(event) {
+//			//event.target=クリックされたピンポイントの要素
+//			//外枠押下時のみ閉じ、モーダルの中を押下時は閉じない
+//			if (event.target === modal) {
+//				handleClose();
+//			}
+//		}
+//
+//		function closeClickListener() {
+//			handleClose();
+//		}
+//
+//		//<div id="modal">の外枠＋中の要素全部がイベント対象
+//		//※子要素で発生したイベントは親要素に伝わるため
+//		modal.addEventListener('click', outsideClickListener);
+//		closeButton.addEventListener('click', closeClickListener);
+//	});
+//}
 
-		function outsideClickListener(event) {
-			//event.target=クリックされたピンポイントの要素
-			//外枠押下時のみ閉じ、モーダルの中を押下時は閉じない
-			if (event.target === modal) {
-				handleClose();
-			}
-		}
-
-		function closeClickListener() {
-			handleClose();
-		}
-
-		//<div id="modal">の外枠＋中の要素全部がイベント対象
-		//※子要素で発生したイベントは親要素に伝わるため
-		modal.addEventListener('click', outsideClickListener);
-		closeButton.addEventListener('click', closeClickListener);
-	});
+// モーダルに習慣名を表示する関数
+function showHabitOnModal(index) {
+	const habit = activeHabits[index];
+	console.log(habit);
+	document.getElementById("modalHabitLabel").textContent = habit.label;
 }
 
-//ラジオボタン押下を待機
-function waitForResult() {
-	return new Promise(resolve => {
-		const radios = document.querySelectorAll('input[name="result"]');
+// ラジオボタンに常時イベントリスナーを設定
+//習慣タイプとラジオボタンの結果に応じて質問を切り替え表示する
+function setupResultChangeListener(currentHabitType) {
+	const radios = document.querySelectorAll('input[name="result"]');
 
-		function handler(event) {
-			radios.forEach(radio => {
-				//チェックするごとに毎回イベントリスナーを外す
-				//ラジオボタンを選び直せるよう、once:trueは設定しない
-				radio.removeEventListener('change', handler);
-			});
-			resolve(event.target.value);
-		}
+	radios.forEach(radio => {
+		radio.addEventListener('change', event => {
+			const selectedResult = event.target.value; // "success" or "failure"
+			const categoryKey = getCategoryKey(currentHabitType, selectedResult === 'success');
 
-		radios.forEach(radio => {
-			radio.addEventListener('change', handler);
+			renderQuestionsForSelectedCategory(categoryKey);
+			document.getElementById("questionBlock").style.display = "block";
 		});
 	});
 }
 
-function waitForclickNextButton() {
-	return new Promise(resolve => {
-		function handler() {
-			nextButton.removeEventListener('click', handler);
-			resolve();
-		}
-		nextButton.addEventListener('click', handler);
+//質問をカテゴリごとに分類
+function storeQuestionsByCategory(questions) {
+	//連想配列（object）を2重配列（[キー, 値] の配列の配列）に変換してから格納する
+	Object.entries(questions).forEach(([categoryKey, questionList]) => {
+		questionStoreMap.set(categoryKey, questionList);
 	});
 }
 
-//カテゴリに応じた質問を押下されたラジオボタンの下部に表示する
-function displayQuestions() {
-	// habitTypeは "CONTINUE" または "QUIT"
-	const habiType = activeHabits[currentHabitIndex].habitType;
+//// 成功／失敗のラジオボタンが選択されるのを待機し、その値を返す
+//function waitForUserResultSelection() {
+//	return new Promise(resolve => {
+//		const radios = document.querySelectorAll('input[name="result"]');
+//
+//		function handler(event) {
+//			radios.forEach(radio => {
+//				//チェックするごとに毎回イベントリスナーを外す
+//				//ラジオボタンを選び直せるよう、once:trueは設定しない
+//				//				radio.removeEventListener('change', handler);
+//			});
+//			resolve(event.target.value);
+//		}
+//
+//		radios.forEach(radio => {
+//			radio.addEventListener('change', handler);
+//		});
+//	});
+//}
 
-	//カテゴリを取得 isSuccessはラジオボタン押下時に取得する(todo)
-	const categoryKey = getCategoryKey(habiType, isSuccess);
-	renderQuestions(categoryKey);
-}
+////カテゴリに応じた質問を押下されたラジオボタンの下部に表示する
+//function displayQuestions() {
+//	// habitTypeは "CONTINUE" または "QUIT"
+//	const habiType = activeHabits[currentHabitIndex].habitType;
+//
+//	//カテゴリを取得 isSuccessはラジオボタン押下時に取得する(todo)
+//	const categoryKey = getCategoryKey(habiType, isSuccess);
+//	renderQuestions(categoryKey);
+//}
 
-//どのカテゴリの質問を出すか決定する
+// 習慣タイプと成功/失敗結果から、該当する質問カテゴリキーを生成する
 function getCategoryKey(habitType, isSuccess) {
 	// habitTypeは "CONTINUE" または "QUIT"
-	const lowerType = habitType.toLowerCase(); // "continue" or "quit"
-	const result = isSuccess ? "success" : "failure";
-	return `${lowerType}-${result}`; // 例："continue-success"
+	const UpperType = habitType.toUpperCase(); // "continue" or "quit"
+	const result = isSuccess ? "SUCCESS" : "FAILURE";
+	return `${UpperType}_${result}`; // 例："continue-success"
 }
 
-//質問と選択肢を描画する
-function renderQuestions(categoryKey) {
+//カテゴリに応じて質問と選択肢を描画する
+function renderQuestionsForSelectedCategory(categoryKey) {
 	const container = document.getElementById("questionBlock");
 	container.innerHTML = ""; // まずリセット
 
-	const questions = questionMap.get(categoryKey) || [];
-	questions.forEach(q => {
+	const questionsList = questionStoreMap.get(categoryKey) || [];
+	questionsList.forEach(question => {
 		const questionDiv = document.createElement('div');
-		const questionText = `<p>${q.text}</p>`;
-		const choiceCheckboxes = q.choices.map(choice => `
+		const questionText = `<p>${question.text}</p>`;
+		const choiceCheckboxes = question.choices.map(choice => `
 			<label>
-				<input type="checkbox" value="${choice.id}"> ${choice.text}
+				<input type="checkbox" value="${choice.id}"> ${choice.label}
 			</label><br>
 		`).join("");
 
 		questionDiv.innerHTML = questionText + choiceCheckboxes;
 		container.appendChild(questionDiv);
 	});
+	document.getElementById("questionBlock").style.display = "block";
+
 }
 
-//toGPT 関数名提案して！保存する処理だけ担当する
-function a() {
+// 「次へ」ボタンがクリックされるのを待機する
+function waitForNextButtonClick() {
+	return new Promise(resolve => {
+		function handler() {
+			//ラジオボタンが選択されているか確認
+			const result = document.querySelector('input[name="result"]:checked');
+			if (!result) {
+				alert("成功か失敗を選んでください");
+				return; // 選択がないので進まない
+			}
+			
+			nextHabitButton.removeEventListener('click', handler);
+			resolve();
+		}
+		nextHabitButton.addEventListener('click', handler);
+	});
+}
+
+// 現在の習慣に対する振り返り内容（成功/失敗・質問回答）を保存する
+function recordUserReview() {
 	//現在の習慣に対する入力を取得
 	const result = document.querySelector('input[name="result"]:checked')?.value;
 	const selectedChoices = Array.from(document.querySelectorAll('#questionBlock input[type="checkbox"]:checked'))
@@ -171,55 +240,53 @@ function a() {
 		success: result === 'success',
 		answerIds: selectedChoices
 	});
-	currentHabitIndex++;
-
-	//習慣が残っている場合は次の習慣へ
-	if (currentHabitIndex < activeHabits.length) {
-		resetModalState();
-		showHabitOnModal(currentHabitIndex);
-	} else {
-		// 最後の習慣まで終わったら送信モードに切り替え
-		document.getElementById("modalHabitLabel").textContent = "すべての振り返りが完了しました！";
-		document.querySelector(".result-options").style.display = "none";
-		document.getElementById("questionBlock").style.display = "none";
-		document.getElementById("navigationButtons").innerHTML = '<button id="submitButton">送信する</button>';
-
-		// 送信ボタンのイベント（この時点では仮のconsole出力）
-		document.getElementById("submitButton").addEventListener('click', () => {
-			console.log("送信するデータ:", reviewResults);
-
-			// TODO: ここでfetch()など使ってAPIへ送信できるようにする
-			alert("振り返りを送信しました！");
-			modal.style.display = "none";
-
-			// 初期化して再スタートできるようにするなら↓
-			reviewResults = [];
-			currentHabitIndex = 0;
-		});
-	}
 }
 
+// 振り返り完了時のUI表示と送信処理を担当
+function finishReviewFlow() {
+	showReviewCompletionMessage();
+	prepareSubmitButton();
+}
 
-//質問リストを取得して保持する
-async function fetchQuestions() {
+function showReviewCompletionMessage() {
+	document.getElementById("modalHabitLabel").textContent = "すべての振り返りが完了しました！";
+	document.querySelector(".result-options").style.display = "none";
+	document.getElementById("questionBlock").style.display = "none";
+}
+
+function prepareSubmitButton() {
+	document.getElementById("navigationButtons").innerHTML = '<button id="submitButton">送信する</button>';
+	document.getElementById("submitButton").addEventListener('click', submitReviewResults);
+}
+
+async function submitReviewResults() {
 	try {
-		const res = await fetch('/api/review/questions');
-		const questions = await res.json();
-		categorizeQuestions(questions);
+		const response = await fetch('/api/review/records', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(reviewResults)
+		});
+
+		if (!response.ok) {
+			throw new Error('送信に失敗しました');
+		}
+
+		alert("振り返りを送信しました！");
+		console.log("送信するデータ:", reviewResults);
+		closeModalAndResetState();
 	} catch (error) {
-		console.error('質問取得失敗:', error);
+		console.error("送信エラー:", error);
+		alert("送信に失敗しました。もう一度お試しください。");
 	}
+
 }
 
-//質問をカテゴリごとに分類
-function categorizeQuestions(questions) {
-	questions.forEach(q => {
-		//カテゴリが質問リストにまだない場合追加する
-		if (!questionMap.has(q.categoryKey)) {
-			questionMap.set(q.categoryKey, []);
-		}
-		questionMap.get(q.categoryKey).push(q); // choices込みでそのまま格納
-	});
+function closeModalAndResetState() {
+	modal.style.display = "none";
+	reviewResults = [];
+	currentHabitIndex = 0;
 }
 
 // モーダル表示を初期化する関数
@@ -229,14 +296,6 @@ function resetModalState() {
 	// 質問・ナビボタン非表示
 	document.getElementById("questionBlock").style.display = "none";
 	document.getElementById("navigationButtons").style.display = "none";
-}
-
-
-// モーダルに習慣名を表示する関数
-function showHabitOnModal(index) {
-	const habit = activeHabits[index];
-	console.log(habit);
-	document.getElementById("modalHabitLabel").textContent = habit.label;
 }
 
 // APIからユーザーのアクティブな習慣を取得する関数

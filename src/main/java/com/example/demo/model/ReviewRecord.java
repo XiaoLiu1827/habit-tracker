@@ -23,17 +23,17 @@ public class ReviewRecord {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	@ManyToOne
 	private Habit habit;
 
 	private LocalDate date;
 
 	private boolean success;
-	
+
 	@ManyToOne
 	private User user;
 
-	 @OneToMany(mappedBy = "reviewRecord", cascade = CascadeType.ALL, orphanRemoval = true)
-	    private List<ReviewAnswer> answers = new ArrayList<>();
+	@OneToMany(mappedBy = "reviewRecord", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ReviewAnswer> answers = new ArrayList<>();
 }

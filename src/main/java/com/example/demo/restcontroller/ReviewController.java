@@ -11,9 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.QuestionWithChoicesDto;
-import com.example.demo.dto.ReviewStartRequest;
-import com.example.demo.dto.ReviewSubmitRequest;
-import com.example.demo.model.ReviewRecord;
+import com.example.demo.dto.ReviewRecordRequest;
 import com.example.demo.service.ReviewQuestionService;
 import com.example.demo.service.ReviewService;
 
@@ -29,12 +27,13 @@ public class ReviewController {
 	private final ReviewQuestionService reviewQuestionService;
 
 	/**
-	 * 振り返りレコードの作成（同じ日・習慣が既にあればそれを返す）
+	 * 振り返り記録の登録
 	 */
-	@PostMapping("/start")
-	public ResponseEntity<ReviewRecord> startReview(@RequestBody ReviewStartRequest request) {
-		ReviewRecord record = reviewService.createReview(request.getUserId(), request.getHabitId(), request.getDate());
-		return ResponseEntity.ok(record);
+
+	@PostMapping("/records")
+	public ResponseEntity<Void> saveReviewRecords(@RequestBody List<ReviewRecordRequest> requestList) {
+		reviewService.saveAllReviewRecords(requestList);
+		return ResponseEntity.ok().build();
 	}
 
 	//    /**
@@ -52,13 +51,4 @@ public class ReviewController {
 	//        List<ReviewQuestionMaster> questions = reviewService.getQuestionsForHabitAndReviewType(habitType, reviewType);
 	//        return ResponseEntity.ok(questions);
 	//    }
-
-	/**
-	 * 回答の登録（選択肢IDのリスト）
-	 */
-	@PostMapping("/submit")
-	public ResponseEntity<Void> submitAnswers(@RequestBody ReviewSubmitRequest request) {
-		reviewService.submitAnswers(request.getReviewRecordId(), request.getChoiceIds());
-		return ResponseEntity.ok().build();
-	}
 }

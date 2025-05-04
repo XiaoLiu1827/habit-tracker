@@ -2,11 +2,11 @@ package com.example.demo.service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import com.example.demo.dto.ReviewRecordRequest;
 import com.example.demo.model.Habit;
 import com.example.demo.model.ReviewAnswer;
 import com.example.demo.model.ReviewChoiceMaster;
@@ -30,66 +30,47 @@ public class ReviewService {
 	private final ReviewChoiceRepository reviewChoiceRepository;
 	private final ReviewAnswerRepository reviewAnswerRepository;
 	private final UserRepository userRepository;
-	
-	 /**
-     * 📝 振り返りの作成（習慣ごとに or 1日1件）
-     */
-    @Transactional
-    public ReviewRecord createReview(Long userId, Long habitId, LocalDate date) {
-        User user = userRepository.findById(userId).orElseThrow();
-        Habit habit = habitRepository.findById(habitId).orElseThrow();
 
-        // 既に同日・同習慣の記録があればスキップ／上書き対応も可能
-        Optional<ReviewRecord> existing = reviewRecordRepository.findByUserAndHabitAndDate(user, habit, date);
-        if (existing.isPresent()) {
-            return existing.get();
-        }
+	/**
+	* 📝 振り返りの作成（習慣ごとに or 1日1件）
+	*/
 
-        ReviewRecord record = new ReviewRecord();
-        record.setUser(user);
-        record.setHabit(habit);
-        record.setDate(date);
+	public void saveAllReviewRecords(List<ReviewRecordRequest> requestList) {
+		User user = getUser();
 
-        return reviewRecordRepository.save(record);
-    }
-    
-//    /**
-//     * ❓ 習慣タイプに応じた質問を取得
-//     */
-//    public List<ReviewQuestionMaster> getQuestionsForHabitAndReviewType(HabitType habitType, ReviewType reviewType) {
-//        return reviewQuestionRepository.findByHabitTypeAndReviewType(habitType, reviewType);
-//    }
-    
-    /**
-     * ✅ 回答の登録（質問IDと選択肢IDのリスト）
-     */
-    @Transactional
-    public void submitAnswers(Long reviewRecordId, List<Long> choiceIds) {
-        ReviewRecord record = reviewRecordRepository.findById(reviewRecordId).orElseThrow();
-        //習慣ごとに全ての回答を取得
-        List<ReviewChoiceMaster> choices = reviewChoiceRepository.findAllById(choiceIds);
+		for (ReviewRecordRequest request : requestList) {
+			Habit habit = getHabit(request.getHabitId());
+			ReviewRecord record = new ReviewRecord();
+			record.setHabit(habit);
+			record.setUser(user);
+			record.setDate(LocalDate.now());
+			record.setSuccess(request.isSuccess());
 
-        for (ReviewChoiceMaster choice : choices) {
-            ReviewAnswer answer = new ReviewAnswer();
-            answer.setReviewRecord(record);
-            answer.setChoice(choice);
-            reviewAnswerRepository.save(answer);
-        }
-    }
-    
-    /**
-     * 📋 特定の振り返りに対する回答一覧取得
-     */
-    public List<ReviewAnswer> getAnswersForRecord(Long reviewRecordId) {
-        ReviewRecord record = reviewRecordRepository.findById(reviewRecordId).orElseThrow();
-        return reviewAnswerRepository.findByReviewRecord(record);
-    }
+			List<ReviewAnswer> answers = buildAnswersFromIds(request.getAnswerIds(), record);
 
-//    /**
-//     * 📅 既にその日の振り返りが存在するか確認（1日1件制御など）
-//     */
-//    public boolean existsReviewForDate(Long userId, LocalDate date) {
-//        User user = userRepository.findById(userId).orElseThrow();
-//        return reviewRecordRepository.existsByUserAndDate(user, date);
-//    }
+			record.setAnswers(answers);
+			reviewRecordRepository.save(record);
+		}
+	}
+
+	private List<ReviewAnswer> buildAnswersFromIds(List<Long> ids, ReviewRecord record) {
+		return ids.stream().filter(Objects::nonNull)
+				.distinct()
+				.map(id -> {
+					ReviewChoiceMaster choice = reviewChoiceRepository.findById(id)
+							.orElseThrow(() -> new IllegalArgumentException("選択肢が見つかりません: " + id));
+					return new ReviewAnswer(null, record, choice);
+				})
+				.toList();
+	}
+
+	private User getUser() {
+		return userRepository.findById(1L) // TODO: 認証導入時に置換
+				.orElseThrow(() -> new IllegalArgumentException("ユーザーが存在しません"));
+	}
+
+	private Habit getHabit(Long id) {
+		return habitRepository.findById(id)
+				.orElseThrow(() -> new IllegalArgumentException("該当の習慣が存在しません"));
+	}
 }

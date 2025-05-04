@@ -13,7 +13,7 @@ public class QuestionWithChoicesDto {
 
 	private Long id;
 	private String text;
-	private List<ChoiceDto> options;
+	private List<ChoiceDto> choices;
 
 	public static QuestionWithChoicesDto from(ReviewQuestionMaster question) {
 		List<ChoiceDto> options = question.getChoices().stream()
