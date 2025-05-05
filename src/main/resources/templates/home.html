@@ -17,7 +17,10 @@
 			<div class="habits-container" id="homeHabitsContainer">
 			</div>
 			<!-- スタートボタン -->
-			<button id="startButton" class="start-button">振り返りをスタートする</button>
+			<button id="startButton" class="start-button" style="display: none;">振り返りをスタートする</button>
+			<div id="review-container">
+				<p id="review-status-message" style="display: none;">判定中...</p>
+			</div>
 			<div class="add-habit-link">
 				<a th:href="@{/habit/new}" class="add-button">習慣を追加</a>
 			</div>
@@ -49,7 +52,8 @@
 		</div>
 		<a th:href="@{/habit/new}">習慣を追加</a>
 
-		<script src="../script/home.js"></script>
+		<script type="module" src="../script/home.js"></script>
+		<script type="module" src="../script/review.js"></script>
 </body>
 
 </html>
