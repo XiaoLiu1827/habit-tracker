@@ -1,14 +1,7 @@
 //外部モジュール
 import { fetchActiveHabits } from './api/habit.js';
 
-
-var modal = document.getElementById("myModal");
-const startButton = document.getElementById("startButton");
 let activeHabits = [];
-let currentHabitIndex = 0; // 現在の習慣のインデックス
-const nextHabitButton = document.getElementById("nextHabitButton");
-let reviewResults = []; // 各習慣の振り返りデータをここに蓄積
-let questionStoreMap = new Map(); // カテゴリ別に質問リストを格納
 
 //**イベント */
 
@@ -26,7 +19,33 @@ window.addEventListener('DOMContentLoaded', async function() {
 
 //**関数 */
 
+// モーダルに習慣名を表示する関数
+function showHabitOnModal(index) {
+	const habit = activeHabits[index];
+	console.log(habit);
+	document.getElementById("modalHabitLabel").textContent = habit.label;
+}
 
+// ホーム画面に習慣を表示する関数
+function displayHabitsOnHome(habits) {
+	const container = document.getElementById('homeHabitsContainer');
+	container.innerHTML = ''; // 一旦クリア
+	console.log(habits);
+	habits.forEach(habit => {
+		const habitDiv = document.createElement('div');
+		habitDiv.className = 'habit-item';
+
+		const title = document.createElement('h3');
+		title.textContent = habit.label;
+
+		const desc = document.createElement('p');
+		desc.textContent = habit.description;
+
+		habitDiv.appendChild(title);
+		habitDiv.appendChild(desc);
+		container.appendChild(habitDiv);
+	});
+}
 
 ////閉じるボタンかモーダル外枠のクリックを待機
 //function waitForClickCloseButtonOrOutSide() {
@@ -57,14 +76,6 @@ window.addEventListener('DOMContentLoaded', async function() {
 //		closeButton.addEventListener('click', closeClickListener);
 //	});
 //}
-
-// モーダルに習慣名を表示する関数
-function showHabitOnModal(index) {
-	const habit = activeHabits[index];
-	console.log(habit);
-	document.getElementById("modalHabitLabel").textContent = habit.label;
-}
-
 
 
 //// 成功／失敗のラジオボタンが選択されるのを待機し、その値を返す
@@ -97,30 +108,3 @@ function showHabitOnModal(index) {
 //	renderQuestions(categoryKey);
 //}
 
-
-
-
-
-
-
-
-// ホーム画面に習慣を表示する関数
-function displayHabitsOnHome(habits) {
-	const container = document.getElementById('homeHabitsContainer');
-	container.innerHTML = ''; // 一旦クリア
-	console.log(habits);
-	habits.forEach(habit => {
-		const habitDiv = document.createElement('div');
-		habitDiv.className = 'habit-item';
-
-		const title = document.createElement('h3');
-		title.textContent = habit.label;
-
-		const desc = document.createElement('p');
-		desc.textContent = habit.description;
-
-		habitDiv.appendChild(title);
-		habitDiv.appendChild(desc);
-		container.appendChild(habitDiv);
-	});
-}
