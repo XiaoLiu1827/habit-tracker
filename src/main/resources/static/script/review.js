@@ -11,6 +11,7 @@ let reviewResults = [];
 let questionStoreMap = new Map();
 const reviewDate = getReviewDate();
 const startButton = document.getElementById("startButton");
+const closeButton = document.querySelector(".close");
 
 
 
@@ -34,6 +35,12 @@ startButton.onclick = async function() {
 	handleModalFlow();
 }
 
+closeButton.addEventListener("click", () => {
+	const shouldClose = confirm("振り返りを中断しますか？");
+	if (shouldClose) {
+		closeModalAndResetState();
+	}
+});
 
 //関数
 

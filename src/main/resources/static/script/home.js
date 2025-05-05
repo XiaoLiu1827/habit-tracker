@@ -4,7 +4,6 @@ import { fetchActiveHabits } from './api/habit.js';
 
 var modal = document.getElementById("myModal");
 const startButton = document.getElementById("startButton");
-const closeButton = document.querySelector(".close");
 let activeHabits = [];
 let currentHabitIndex = 0; // 現在の習慣のインデックス
 const nextHabitButton = document.getElementById("nextHabitButton");
@@ -22,14 +21,6 @@ window.addEventListener('DOMContentLoaded', async function() {
 	activeHabits = habits;
 	// ホーム画面に習慣のラベルと説明を表示
 	displayHabitsOnHome(habits);
-});
-
-
-closeButton.addEventListener("click", () => {
-	const shouldClose = confirm("振り返りを中断しますか？");
-	if (shouldClose) {
-		closeModalAndResetState();
-	}
 });
 
 
