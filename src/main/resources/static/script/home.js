@@ -1,30 +1,27 @@
 //外部モジュール
 import { fetchActiveHabits } from './api/habit.js';
 
-let activeHabits = [];
+let cachedHabits = [];
+
+// API呼び出しはスクリプト実行直後に開始し、非同期でデータを取得しておく
+// 他の初期処理に影響を与えないよう、ここでは await せず Promise を作成しておく
+// データ取得後は cachedHabits に格納される（表示は DOMContentLoaded 後に実行）
+const fetchPromise = fetchActiveHabits(1).then(data => {
+	cachedHabits = data;
+});
 
 //**イベント */
 
 // ページ読み込み時
-window.addEventListener('DOMContentLoaded', async function() {
-	// APIから習慣一覧を取得
-	//Promiseの完了を待って中身を取得
-	const habits = await fetchActiveHabits(1);
-	//グローバル変数に格納
-	activeHabits = habits;
+window.addEventListener('DOMContentLoaded', async () => {
+	//cachedHabitsの格納を待機して表示処理に移行
+	await fetchPromise;
 	// ホーム画面に習慣のラベルと説明を表示
-	displayHabitsOnHome(habits);
+	displayHabitsOnHome(cachedHabits);
 });
 
 
 //**関数 */
-
-// モーダルに習慣名を表示する関数
-function showHabitOnModal(index) {
-	const habit = activeHabits[index];
-	console.log(habit);
-	document.getElementById("modalHabitLabel").textContent = habit.label;
-}
 
 // ホーム画面に習慣を表示する関数
 function displayHabitsOnHome(habits) {
