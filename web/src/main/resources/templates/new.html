@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>習慣作成</title>
+</head>
+<body>
+<h1>習慣を作成</h1>
+<form th:action="@{/habit/new}" method="post">
+    <input type="text" name="name" placeholder="習慣名" required />
+    <button type="submit">作成</button>
+</form>
+<a th:href="@{/}">戻る</a>
+</body>
+</html>
