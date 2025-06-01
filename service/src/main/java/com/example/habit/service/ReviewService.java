@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 
 import org.springframework.stereotype.Service;
 
@@ -37,6 +38,7 @@ public class ReviewService {
 	private final ReviewAnswerRepository reviewAnswerRepository;
 	private final UserRepository userRepository;
 	private final ReviewSessionRepository reviewSessionRepository;
+	private final ExecutorService executor;
 
 	//振り返り実施済み判定
 	public ReviewSessionStatusResponse getTodayReviewStatus(Long userId, LocalDate reviewDate) {

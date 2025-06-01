@@ -6,11 +6,15 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +23,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "review_record", uniqueConstraints = @UniqueConstraint(columnNames = { "habit_id", "date" }))
+
 public class ReviewRecord {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,6 +36,9 @@ public class ReviewRecord {
 	private LocalDate date;
 
 	private boolean success;
+
+	@Enumerated(EnumType.STRING)
+	private ReviewStatus status; // PENDING / SUCCESS / FAILED
 
 	@ManyToOne
 	private User user;

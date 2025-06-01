@@ -34,7 +34,7 @@ public class InMemoryHabitRepository {
 
 	public void addRecord(Long habitId, boolean success) {
 		Long id = idGenerator.incrementAndGet();
-		ReviewRecord record = new ReviewRecord(id,habits.get(habitId), LocalDate.now(), success,null,null);
+		ReviewRecord record = new ReviewRecord(id,habits.get(habitId), LocalDate.now(), success,null,null,null);
 		records.get(habitId).add(record);
 	}
 

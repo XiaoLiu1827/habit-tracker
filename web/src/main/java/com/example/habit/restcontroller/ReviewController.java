@@ -50,9 +50,9 @@ public class ReviewController {
 		return ResponseEntity.ok().build();
 	}
 
-	//    /**
-	//     * 習慣タイプと振り返り種別に応じた質問を取得
-	//     */
+	/**
+	 * 習慣タイプと振り返り種別に応じた質問を取得
+	 */
 
 	@GetMapping("/questions")
 	public Map<String, List<QuestionWithChoicesDto>> getAllGroupedQuestions() {

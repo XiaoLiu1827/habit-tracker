@@ -6,10 +6,19 @@ INSERT INTO account_user (id, username)
 VALUES (2, 'second_user');
 
 INSERT INTO habit (id, label, description, created_date, type, is_active, user_id)
-VALUES (1, '朝の散歩', '健康のために毎朝散歩する', '2025-04-21', 'CONTINUE', true, 1);
+VALUES (1, '集中して勉強', '集中して勉強する', '2025-04-21', 'CONTINUE', true, 1);
 
 INSERT INTO habit (id, label, description, created_date, type, is_active, user_id)
-VALUES (2, 'SNS視聴', 'タスクが終わるまでSNSを見ない', '2025-04-21', 'QUIT', true, 1);
+VALUES (2, 'ポルノ見ない', 'ポルノ見ない', '2025-04-21', 'QUIT', true, 1);
+
+INSERT INTO habit (id, label, description, created_date, type, is_active, user_id)
+VALUES (3, '早寝', '早寝する', '2025-04-22', 'CONTINUE', true, 1);
+
+INSERT INTO habit (id, label, description, created_date, type, is_active, user_id)
+VALUES (4, '7000歩', '7000歩以上歩く・走る', '2025-04-22', 'CONTINUE', true, 1);
+
+-- review_question_master と review_choice_master は変更なし
+-- 必要があれば後続で追加修正可能
 
 INSERT INTO review_question_master (id, question_label, habit_type, review_type) VALUES
 (1, 'なぜ継続できたと思いますか？', 'CONTINUE', 'SUCCESS'),
@@ -17,19 +26,20 @@ INSERT INTO review_question_master (id, question_label, habit_type, review_type)
 (3, 'なぜやめられたと思いますか？', 'QUIT', 'SUCCESS'),
 (4, 'やめられなかった理由は何ですか？', 'QUIT', 'FAILURE');
 
+
 -- CONTINUE / SUCCESS
 INSERT INTO review_choice_master (id, question_id, choice_label) VALUES
-(1, 1, '時間に余裕があった'),
-(2, 1, '気分が良かった'),
-(3, 1, '前日の準備ができていた'),
+(1, 1, 'モチベが高い'),
+(2, 1, '計画通り行動した'),
+(3, 1, 'ハードルを感じなかった'),
 (4, 1, '習慣になってきた');
 
 -- CONTINUE / FAILURE
 INSERT INTO review_choice_master (id, question_id, choice_label) VALUES
 (5, 2, '忘れていた'),
-(6, 2, '気が進まなかった'),
-(7, 2, '他の予定が入っていた'),
-(8, 2, '体調が悪かった');
+(6, 2, 'モチベが出なかった'),
+(7, 2, '忙しかった'),
+(8, 2, '気が重かった');
 
 -- QUIT / SUCCESS
 INSERT INTO review_choice_master (id, question_id, choice_label) VALUES
@@ -40,10 +50,12 @@ INSERT INTO review_choice_master (id, question_id, choice_label) VALUES
 
 -- QUIT / FAILURE
 INSERT INTO review_choice_master (id, question_id, choice_label) VALUES
-(13, 4, 'ストレスが溜まっていた'),
+(13, 4, 'ストレス・不安'),
 (14, 4, 'つい手が伸びた'),
-(15, 4, '環境が変わっていない'),
+(15, 4, '少しくらい平気と思った'),
 (16, 4, '我慢の限界だった');
+
+
 
 --Review_Record
 INSERT INTO review_record (habit_id, user_id, date, success)
