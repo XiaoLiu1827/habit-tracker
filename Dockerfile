@@ -11,4 +11,4 @@ COPY . .
 RUN ./mvnw clean package -DskipTests
 
 # アプリを実行（JARファイル名に注意）
-CMD ["sh", "-c", "java -jar target/*.jar"]
+CMD ["java", "-jar", "web/target/web-0.0.1-SNAPSHOT.jar"]
