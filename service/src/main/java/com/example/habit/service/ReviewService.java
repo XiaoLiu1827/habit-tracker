@@ -3,6 +3,7 @@ package com.example.habit.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +18,7 @@ import com.example.habit.model.ReviewAnswer;
 import com.example.habit.model.ReviewChoiceMaster;
 import com.example.habit.model.ReviewRecord;
 import com.example.habit.model.ReviewSession;
+import com.example.habit.model.ReviewStatus;
 import com.example.habit.model.User;
 import com.example.habit.repository.HabitRepository;
 import com.example.habit.repository.ReviewAnswerRepository;
@@ -25,6 +27,7 @@ import com.example.habit.repository.ReviewQuestionRepository;
 import com.example.habit.repository.ReviewRecordRepository;
 import com.example.habit.repository.ReviewSessionRepository;
 import com.example.habit.repository.UserRepository;
+import com.example.habit.task.ReviewSaveTask;
 
 import lombok.RequiredArgsConstructor;
 
@@ -64,19 +67,37 @@ public class ReviewService {
 		ReviewSession session = new ReviewSession(userId, reviewDate, LocalDateTime.now());
 		reviewSessionRepository.save(session);
 
+		//先に保存状態を同期処理で保存
+	    List<ReviewRecord> records = new ArrayList<>();
+
 		for (ReviewRecordRequest request : requestList) {
-			Habit habit = getHabit(request.getHabitId());
-			ReviewRecord record = new ReviewRecord();
-			record.setHabit(habit);
-			record.setUser(user);
-			record.setDate(LocalDate.now());
-			record.setSuccess(request.isSuccess());
+	        Habit habit = getHabit(request.getHabitId());
 
-			List<ReviewAnswer> answers = buildAnswersFromIds(request.getAnswerIds(), record);
+	        ReviewRecord record = new ReviewRecord();
+	        record.setHabit(habit);
+	        record.setUser(user);
+	        record.setDate(reviewDate);
+	        record.setSuccess(request.isSuccess());
+	        record.setStatus(ReviewStatus.PENDING);
 
-			record.setAnswers(answers);
-			reviewRecordRepository.save(record);
-		}
+	        records.add(record);
+	    }
+
+	    reviewRecordRepository.saveAll(records);
+	    
+	    //回答記録を非同期処理で保存
+	    for (int i = 0; i < records.size(); i++) {
+	        ReviewRecord record = records.get(i);
+	        List<Long> answerIds = requestList.get(i).getAnswerIds();
+
+	        ReviewSaveTask task = new ReviewSaveTask(
+	            record,
+	            answerIds,
+	            reviewRecordRepository,
+	            this::buildAnswersFromIds // メソッド参照で注入
+	        );
+	        executor.submit(task);
+	    }
 	}
 
 	private List<ReviewAnswer> buildAnswersFromIds(List<Long> ids, ReviewRecord record) {
