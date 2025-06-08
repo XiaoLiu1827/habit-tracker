@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Entity
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor//Hibernateがnew()するのに必要
 @Table(name = "review_record", uniqueConstraints = @UniqueConstraint(columnNames = { "habit_id", "date" }))
 
 public class ReviewRecord {

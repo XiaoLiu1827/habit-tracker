@@ -94,7 +94,8 @@ public class ReviewService {
 	            record,
 	            answerIds,
 	            reviewRecordRepository,
-	            this::buildAnswersFromIds // メソッド参照で注入
+	            this::buildAnswersFromIds, // メソッド参照で注入
+	            reviewAnswerRepository
 	        );
 	        executor.submit(task);
 	    }
