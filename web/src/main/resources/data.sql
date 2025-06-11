@@ -91,6 +91,25 @@ VALUES
 (2, 1, '2025-05-01', true),
 (2, 1, '2025-05-02', false),
 (2, 1, '2025-05-03', true),
-(2, 1, '2025-05-04', false);
+(2, 1, '2025-05-04', true),
+(2, 1, '2025-05-05', true);
+
+INSERT INTO review_record (habit_id, user_id, date, success)
+VALUES
+(3, 1, '2025-05-01', true),
+(3, 1, '2025-05-02', false),
+(3, 1, '2025-05-03', true),
+(3, 1, '2025-05-04', true),
+(3, 1, '2025-05-05', false);
+
+INSERT INTO review_record (habit_id, user_id, date, success)
+VALUES
+(4, 1, '2025-05-01', true),
+(4, 1, '2025-05-02', false),
+(4, 1, '2025-05-03', true),
+(4, 1, '2025-05-04', true),
+(4, 1, '2025-05-05', false),
+(4, 1, '2025-05-06', true),
+(4, 1, '2025-05-07', true);
 
 

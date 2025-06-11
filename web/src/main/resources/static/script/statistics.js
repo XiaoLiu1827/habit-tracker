@@ -11,7 +11,7 @@ const fetchPromise = fetchActiveHabits(1).then(data => {
 });
 
 // 成功率データのキャッシュ
-const successRateCache = {};// { habitId: 結果 }
+const habitStatisticsCache = {};// { habitId: 結果 }
 
 //**イベント */
 
@@ -24,6 +24,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 	const buttonContainer = document.getElementById("habitButtons");
 
 	const successRateContent = document.getElementById("successRateContent");
+	const streakContent = document.getElementById("streakContent");
 
 	cachedHabits.forEach(habit => {
 		const button = document.createElement("button");
@@ -34,10 +35,22 @@ window.addEventListener('DOMContentLoaded', async () => {
 		button.addEventListener("click", async () => {
 			const habitId = habit.id;
 
-			//該当データがキャッシュ済みであればそのまま使用する
-			if (successRateCache[habitId]) {
-				const stat = successRateCache[habitId];
-				successRateContent.textContent = `成功率：${stat.successRate}%（${stat.successCount}/${stat.totalCount}日）`;
+			// 全ボタンの選択状態をリセット
+			document.querySelectorAll(".habit-button").forEach(btn => {
+				btn.classList.remove("selected");
+			});
+
+			// このボタンだけ選択状態にする
+			button.classList.add("selected");
+
+			//該当データがキャッシュにあればそのまま使用
+			if (habitStatisticsCache[habitId]) {
+				const stat = habitStatisticsCache[habitId];
+				const rate = stat.successRateDto;
+				const streak = stat.streakDto;
+				successRateContent.textContent = `成功率：${rate.successRate}%（${rate.successCount}/${rate.totalCount}日）`;
+				streakContent.textContent = `${streak.streakDays}日連続達成中！`
+				console.log(`統計表示中（キャッシュ）：習慣ID=${habit.id}`);
 				return;
 			}
 
@@ -47,15 +60,21 @@ window.addEventListener('DOMContentLoaded', async () => {
 				const year = now.getFullYear();
 				const month = now.getMonth() + 1;
 
-				const res = await fetch(`/api/statistics/success-rate?habitId=${habitId}&year=${year}&month=${month}`);
+				const res = await fetch(`/api/statistics?habitId=${habitId}&year=${year}&month=${month}`);
 				if (!res.ok) throw new Error("データ取得失敗");
 
 				const stat = await res.json();
 
 				// キャッシュに保存
-				successRateCache[habitId] = stat;
+				habitStatisticsCache[habitId] = stat;
 
-				successRateContent.textContent = `成功率：${stat.successRate}%（${stat.successCount}/${stat.totalCount}日）`;
+				const rate = stat.successRateDto;
+				const streak = stat.streakDto;
+
+				successRateContent.textContent = `成功率：${rate.successRate}%（${rate.successCount}/${rate.totalCount}日）`;
+				streakContent.textContent = `${streak.streakDays}日連続達成中！`
+				console.log(`統計表示中（api）：習慣ID=${habit.id}`);
+
 			} catch (error) {
 				console.error("取得エラー", error);
 				successRateContent.textContent = "統計データの取得に失敗しました";

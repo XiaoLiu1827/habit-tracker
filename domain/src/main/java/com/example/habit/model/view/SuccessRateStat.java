@@ -1,4 +1,4 @@
-package com.example.habit.dto;
+package com.example.habit.model.view;
 //DBマッピング用
 public record SuccessRateStat(
 		Long habitId,
