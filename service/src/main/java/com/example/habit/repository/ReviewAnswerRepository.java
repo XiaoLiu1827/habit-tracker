@@ -8,5 +8,5 @@ import com.example.habit.model.ReviewAnswer;
 import com.example.habit.model.ReviewRecord;
 
 public interface ReviewAnswerRepository extends JpaRepository<ReviewAnswer, Long> {
-    List<ReviewAnswer> findByReviewRecord(ReviewRecord reviewRecord);
+	List<ReviewAnswer> findByReviewRecord(ReviewRecord reviewRecord);
 }

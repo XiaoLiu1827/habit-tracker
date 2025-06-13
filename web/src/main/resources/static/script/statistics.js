@@ -22,9 +22,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 	// 習慣ボタンのコンテナ
 	const buttonContainer = document.getElementById("habitButtons");
-
 	const successRateContent = document.getElementById("successRateContent");
 	const streakContent = document.getElementById("streakContent");
+	const questionStatsContent = document.getElementById("questionStatsContent");
+
 
 	cachedHabits.forEach(habit => {
 		const button = document.createElement("button");
@@ -48,8 +49,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 				const stat = habitStatisticsCache[habitId];
 				const rate = stat.successRateDto;
 				const streak = stat.streakDto;
+				const questionStats = stat.questionStatList;
+
 				successRateContent.textContent = `成功率：${rate.successRate}%（${rate.successCount}/${rate.totalCount}日）`;
 				streakContent.textContent = `${streak.streakDays}日連続達成中！`
+				renderQuestionStats(questionStats);
 				console.log(`統計表示中（キャッシュ）：習慣ID=${habit.id}`);
 				return;
 			}
@@ -70,9 +74,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 				const rate = stat.successRateDto;
 				const streak = stat.streakDto;
+				const questionStats = stat.questionStatList;
 
 				successRateContent.textContent = `成功率：${rate.successRate}%（${rate.successCount}/${rate.totalCount}日）`;
 				streakContent.textContent = `${streak.streakDays}日連続達成中！`
+				renderQuestionStats(questionStats);
 				console.log(`統計表示中（api）：習慣ID=${habit.id}`);
 
 			} catch (error) {
@@ -84,3 +90,28 @@ window.addEventListener('DOMContentLoaded', async () => {
 		buttonContainer.appendChild(button);
 	});
 });
+
+//**関数 */
+
+function renderQuestionStats(questionStats) {
+	questionStatsContent.innerHTML = ""; // 前回表示分をリセット
+
+	questionStats.forEach(stat => {
+		const questionBlock = document.createElement("div");
+		questionBlock.className = "question-block";
+
+		const title = document.createElement("h4");
+		title.textContent = stat.questionLabel;
+		questionBlock.appendChild(title);
+
+		const ul = document.createElement("ul");
+		stat.choices.forEach(choice => {
+			const li = document.createElement("li");
+			li.textContent = `${choice.choiceLabel}：${choice.answerCount}件`;
+			ul.appendChild(li);
+		});
+
+		questionBlock.appendChild(ul);
+		questionStatsContent.appendChild(questionBlock);
+	});
+}
